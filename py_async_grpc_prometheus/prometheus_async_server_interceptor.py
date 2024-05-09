@@ -3,16 +3,16 @@ import logging
 
 from timeit import default_timer
 
-import grpc
+from grpc.aio import ServerInterceptor
 from prometheus_client.registry import REGISTRY
 
-from py_grpc_prometheus import grpc_utils
-from py_grpc_prometheus import server_metrics
+from py_async_grpc_prometheus import grpc_utils
+from py_async_grpc_prometheus import server_metrics
 
 
 _LOGGER = logging.getLogger(__name__)
 
-class PromServerInterceptor(grpc.ServerInterceptor):
+class PromAsyncServerInterceptor(ServerInterceptor):
 
   def __init__(self,
                enable_handling_time_histogram=False,
@@ -30,7 +30,7 @@ class PromServerInterceptor(grpc.ServerInterceptor):
     self._skip_exceptions = skip_exceptions
     self._log_exceptions = log_exceptions
 
-  def intercept_service(self, continuation, handler_call_details):
+  async def intercept_service(self, continuation, handler_call_details):
     """
     Intercepts the server function calls.
 
@@ -44,7 +44,7 @@ class PromServerInterceptor(grpc.ServerInterceptor):
     grpc_service_name, grpc_method_name, _ = grpc_utils.split_method_call(handler_call_details)
 
     def metrics_wrapper(behavior, request_streaming, response_streaming):
-      def new_behavior(request_or_iterator, servicer_context):
+      async def new_behavior(request_or_iterator, servicer_context):
         response_or_iterator = None
         try:
           start = default_timer()
@@ -64,7 +64,7 @@ class PromServerInterceptor(grpc.ServerInterceptor):
                   grpc_method=grpc_method_name).inc()
 
             # Invoke the original rpc behavior.
-            response_or_iterator = behavior(request_or_iterator, servicer_context)
+            response_or_iterator = await behavior(request_or_iterator, servicer_context)
 
             if response_streaming:
               sent_metric = self._metrics["grpc_server_stream_msg_sent"]
@@ -118,12 +118,13 @@ class PromServerInterceptor(grpc.ServerInterceptor):
               _LOGGER.error(e)
             if response_or_iterator is None:
               return response_or_iterator
-            return behavior(request_or_iterator, servicer_context)
+            return await behavior(request_or_iterator, servicer_context)
           raise e
 
       return new_behavior
 
-    optional_any = self._wrap_rpc_behavior(continuation(handler_call_details), metrics_wrapper)
+    response = await continuation(handler_call_details)
+    optional_any = self._wrap_rpc_behavior(response, metrics_wrapper)
 
     return optional_any
 

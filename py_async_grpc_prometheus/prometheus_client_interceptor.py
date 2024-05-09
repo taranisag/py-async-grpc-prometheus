@@ -5,8 +5,8 @@ from timeit import default_timer
 import grpc
 from prometheus_client.registry import REGISTRY
 
-from py_grpc_prometheus import grpc_utils
-from py_grpc_prometheus.client_metrics import init_metrics
+from py_async_grpc_prometheus import grpc_utils
+from py_async_grpc_prometheus.client_metrics import init_metrics
 
 class PromClientInterceptor(grpc.UnaryUnaryClientInterceptor,
                             grpc.UnaryStreamClientInterceptor,

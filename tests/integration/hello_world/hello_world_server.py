@@ -7,7 +7,7 @@ from prometheus_client import start_http_server
 
 import tests.integration.hello_world.hello_world_pb2 as hello_world_pb2
 import tests.integration.hello_world.hello_world_pb2_grpc as hello_world_grpc
-from py_grpc_prometheus.prometheus_server_interceptor import PromServerInterceptor
+from py_async_grpc_prometheus.prometheus_async_server_interceptor import PromServerInterceptor
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 _LOGGER = logging.getLogger(__name__)

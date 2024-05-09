@@ -1,4 +1,4 @@
-# py-grpc-prometheus
+# py-async-grpc-prometheus
 
 Instrument library to provide prometheus metrics similar to:
 

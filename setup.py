@@ -5,18 +5,18 @@ from setuptools import setup
 with open("README.md", "r") as fh:
   long_description = fh.read()
 
-setup(name="py_grpc_prometheus",
+setup(name="py_async_grpc_prometheus",
       version="0.8.0",
-      description="Python gRPC Prometheus Interceptors",
+      description="Python async gRPC Prometheus Interceptors",
       long_description=long_description,
       long_description_content_type="text/markdown",
-      author="Lin Chen",
-      author_email="linchen04@gmail.com",
+      author="Taranis",
+      author_email="avi.klaiman@taranis.com",
       install_requires=[
           "setuptools>=39.0.1",
           "grpcio>=1.10.0",
           "prometheus_client>=0.3.0"
       ],
-      url="https://github.com/lchenn/py-grpc-prometheus",
+      url="https://github.com/taranisag/py-async-grpc-prometheus",
       packages=find_packages(exclude=["tests.*", "tests"]),
      )
