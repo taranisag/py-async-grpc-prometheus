@@ -3,6 +3,7 @@ import logging
 
 from timeit import default_timer
 
+import grpc
 from grpc.aio import ServerInterceptor
 from grpc import StatusCode
 from prometheus_client.registry import REGISTRY
@@ -131,13 +132,13 @@ class PromAsyncServerInterceptor(ServerInterceptor):
 
   # pylint: disable=protected-access
   def _compute_status_code(self, servicer_context):
-    if servicer_context._state.client == "cancelled":
+    if servicer_context.cancelled():
       return StatusCode.CANCELLED
 
-    if servicer_context._state.code is None:
+    if servicer_context.code() is None:
       return StatusCode.OK
 
-    return servicer_context._state.code
+    return servicer_context.code()
 
   def _compute_error_code(self, grpc_exception):
     if isinstance(grpc_exception, grpc.Call):

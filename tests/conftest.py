@@ -68,10 +68,10 @@ async def grpc_server_with_exception_handling():
   prom_server.shutdown()
   prom_server.server_close()
 
-@pytest.fixture(scope='function')
+@pytest_asyncio.fixture(scope='function')
 async def grpc_server():
   prom_registry = registry.CollectorRegistry(auto_describe=True)
-  server = grpc.server(futures.ThreadPoolExecutor(max_workers=2),
+  server = aio.server(futures.ThreadPoolExecutor(max_workers=2),
                        interceptors=(
                            PromAsyncServerInterceptor(
                                enable_handling_time_histogram=True,

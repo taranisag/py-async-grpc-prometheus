@@ -53,18 +53,19 @@ class PromAsyncClientInterceptor(UnaryUnaryClientInterceptor,
           grpc_service=grpc_service_name,
           grpc_method=grpc_method_name).observe(max(default_timer() - start, 0))
 
+    code = await handler.code()
     if self._legacy:
       self._metrics["legacy_grpc_client_completed_counter"].labels(
           grpc_type=grpc_type,
           grpc_service=grpc_service_name,
           grpc_method=grpc_method_name,
-          code=handler.code().name).inc()
+          code=code.name).inc()
     else:
       self._metrics["grpc_client_handled_counter"].labels(
           grpc_type=grpc_type,
           grpc_service=grpc_service_name,
           grpc_method=grpc_method_name,
-          grpc_code=handler.code().name).inc()
+          grpc_code=code.name).inc()
 
     return handler
 
