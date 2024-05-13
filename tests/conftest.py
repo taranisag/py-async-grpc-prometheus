@@ -88,8 +88,8 @@ async def grpc_server():
   prom_server.shutdown()
   prom_server.server_close()
 
-@pytest.fixture(scope='function')
-def grpc_stub():
+@pytest_asyncio.fixture(scope='function')
+async def grpc_stub():
   prom_registry = registry.CollectorRegistry(auto_describe=True)
   channel = aio.insecure_channel("localhost:50051",
                                  interceptors=(PromAsyncClientInterceptor(registry=prom_registry),))
@@ -98,7 +98,7 @@ def grpc_stub():
 
   yield stub
 
-  channel.close()
+  await channel.close()
   prom_server.shutdown()
 
 @pytest.fixture(scope="module")

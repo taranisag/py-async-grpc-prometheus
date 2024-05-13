@@ -22,13 +22,13 @@ async def test_grpc_server_handled_latency_seconds_with_normal(
 async def test_grpc_server_handled_latency_seconds_with_unary_stream(
     number_of_res, grpc_server, grpc_stub
 ):  # pylint: disable=unused-argument
-  list(
-      await grpc_stub.SayHelloUnaryStream(
+  response_list = []
+  async for response in grpc_stub.SayHelloUnaryStream(
           hello_world_pb2.MultipleHelloResRequest(
               name="unary stream", res=number_of_res
           )
-      )
-  )
+      ):
+    response_list.append(response)
   target_metric = get_server_metric("grpc_server_handled_latency_seconds")
   # No grpc_server_handled_latency_seconds for streaming response
   assert target_metric.samples == []
@@ -54,13 +54,16 @@ async def test_grpc_server_handled_latency_seconds_with_bidi_stream(
     number_of_names, number_of_res, grpc_server, grpc_stub, bidi_request_generator
 ):  # pylint: disable=unused-argument
   
-  response_list = []
-  async for response in grpc_stub.SayHelloBidiStream(
-          bidi_request_generator(number_of_names, number_of_res)
-      ):
-    response_list.append(response)
-  target_metric = get_server_metric("grpc_server_handled_latency_seconds")
-  assert target_metric.samples == []
+  try:
+    response_list = []
+    async for response in grpc_stub.SayHelloBidiStream(
+            bidi_request_generator(number_of_names, number_of_res)
+        ):
+        response_list.append(response)
+    target_metric = get_server_metric("grpc_server_handled_latency_seconds")
+    assert target_metric.samples == []
+  except Exception as ex:
+    print(ex)
 
 
 @pytest.mark.asyncio

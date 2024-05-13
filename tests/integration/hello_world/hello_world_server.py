@@ -40,13 +40,16 @@ class Greeter(hello_world_grpc.GreeterServicer):
 
   async def SayHelloStreamUnary(self, request_iterator, context):
     names = ""
-    for request in request_iterator:
+    async for request in request_iterator:
       names += request.name + " "
     return hello_world_pb2.HelloReply(message="Hello, %s!" % names)
 
   async def SayHelloBidiStream(self, request_iterator, context):
-    async for request in request_iterator:
-      yield hello_world_pb2.HelloReply(message="Hello, %s!" % request.name)
+    try:
+      async for request in request_iterator:
+        yield hello_world_pb2.HelloReply(message="Hello, %s!" % request.name)
+    except Exception as ex:
+      print(ex)
 
 
 async def serve():
