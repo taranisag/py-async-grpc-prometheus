@@ -4,6 +4,7 @@ import logging
 from timeit import default_timer
 
 from grpc.aio import ServerInterceptor
+from grpc import StatusCode
 from prometheus_client.registry import REGISTRY
 
 from py_async_grpc_prometheus import grpc_utils
@@ -85,8 +86,8 @@ class PromAsyncServerInterceptor(ServerInterceptor):
           except Exception as e:
             if not self._skip_exceptions:
               status_code = self._compute_status_code(servicer_context)
-              if status_code == grpc.StatusCode.OK:
-                  status_code = grpc.StatusCode.UNKNOWN
+              if status_code == StatusCode.OK:
+                  status_code = StatusCode.UNKNOWN
               self.increase_grpc_server_handled_total_counter(grpc_type,
                                                               grpc_service_name,
                                                               grpc_method_name,
@@ -131,10 +132,10 @@ class PromAsyncServerInterceptor(ServerInterceptor):
   # pylint: disable=protected-access
   def _compute_status_code(self, servicer_context):
     if servicer_context._state.client == "cancelled":
-      return grpc.StatusCode.CANCELLED
+      return StatusCode.CANCELLED
 
     if servicer_context._state.code is None:
-      return grpc.StatusCode.OK
+      return StatusCode.OK
 
     return servicer_context._state.code
 
@@ -142,7 +143,7 @@ class PromAsyncServerInterceptor(ServerInterceptor):
     if isinstance(grpc_exception, grpc.Call):
       return grpc_exception.code()
 
-    return grpc.StatusCode.UNKNOWN
+    return StatusCode.UNKNOWN
 
   def increase_grpc_server_handled_total_counter(
       self, grpc_type, grpc_service_name, grpc_method_name, grpc_code):

@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
   long_description = fh.read()
 
 setup(name="py_async_grpc_prometheus",
-      version="0.8.0",
+      version="0.1.0",
       description="Python async gRPC Prometheus Interceptors",
       long_description=long_description,
       long_description_content_type="text/markdown",

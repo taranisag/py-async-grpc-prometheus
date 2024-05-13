@@ -6,12 +6,13 @@ from tests.py_grpc_prometheus.utils import get_server_metric
 from tests.integration.hello_world import hello_world_pb2
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize("target_count", [1, 10, 100])
-def test_grpc_server_handled_latency_seconds_with_normal(
+async def test_grpc_server_handled_latency_seconds_with_normal(
     target_count, grpc_server, grpc_stub
 ):  # pylint: disable=unused-argument
   for i in range(target_count):
-    grpc_stub.SayHello(hello_world_pb2.HelloRequest(name=str(i)))
+    await grpc_stub.SayHello(hello_world_pb2.HelloRequest(name=str(i)))
   target_metric = get_server_metric("grpc_server_handled_latency_seconds")
   assert target_metric.samples == []
 

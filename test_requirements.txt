@@ -2,5 +2,6 @@ pylint
 pre-commit
 protobuf
 pytest
+pytest-asyncio
 requests
 coverage
