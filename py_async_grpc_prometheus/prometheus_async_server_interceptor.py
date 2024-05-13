@@ -1,6 +1,6 @@
 """Interceptor a client call with prometheus"""
 import logging
-
+import inspect
 from timeit import default_timer
 
 import grpc
@@ -66,18 +66,26 @@ class PromAsyncServerInterceptor(ServerInterceptor):
                   grpc_method=grpc_method_name).inc()
 
             # Invoke the original rpc behavior.
-            response_or_iterator = await behavior(request_or_iterator, servicer_context)
+            response_or_iterator_func = behavior(request_or_iterator, servicer_context)            
 
             if response_streaming:
-              sent_metric = self._metrics["grpc_server_stream_msg_sent"]
-              response_or_iterator = grpc_utils.wrap_iterator_inc_counter(
-                  response_or_iterator,
-                  sent_metric,
-                  grpc_type,
-                  grpc_service_name,
-                  grpc_method_name)
+              # response_or_iterator = grpc_utils.wrap_iterator_inc_counter(
+              #     response_or_iterator_func,
+              #     self._metrics["grpc_server_stream_msg_sent"],
+              #     grpc_type,
+              #     grpc_service_name,
+              #     grpc_method_name)
 
+              response_or_iterator = []
+              sent_metric = self._metrics["grpc_server_stream_msg_sent"]            
+              async for item in response_or_iterator_func:
+                sent_metric.labels(
+                grpc_type=grpc_type,
+                grpc_service=grpc_service_name,
+                grpc_method=grpc_method_name).inc()
+                response_or_iterator.append(item)
             else:
+              response_or_iterator = await response_or_iterator_func
               self.increase_grpc_server_handled_total_counter(grpc_type,
                                                               grpc_service_name,
                                                               grpc_method_name,
