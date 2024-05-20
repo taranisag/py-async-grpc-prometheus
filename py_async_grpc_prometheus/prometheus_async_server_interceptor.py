@@ -48,29 +48,25 @@ class PromAsyncServerInterceptor(ServerInterceptor):
 
     def metrics_wrapper(behavior, request_streaming, response_streaming):
       async def new_response_unary_behavior(request_or_iterator, servicer_context):
-        response_or_iterator = None
-        
         try:
           start = default_timer()
           grpc_type = grpc_utils.get_method_type(request_streaming, response_streaming)
           
           try:
+            self._metrics["grpc_server_started_counter"].labels(
+                  grpc_type=grpc_type,
+                  grpc_service=grpc_service_name,
+                  grpc_method=grpc_method_name).inc()
             if request_streaming:
-              request_or_iterator = grpc_utils.wrap_iterator_inc_counter(
+              response_or_iterator = grpc_utils.wrap_iterator_inc_counter(
                   request_or_iterator,
                   self._metrics["grpc_server_stream_msg_received"],
                   grpc_type,
                   grpc_service_name,
                   grpc_method_name)
-            else:
-              self._metrics["grpc_server_started_counter"].labels(
-                  grpc_type=grpc_type,
-                  grpc_service=grpc_service_name,
-                  grpc_method=grpc_method_name).inc()
-
-            # Invoke the original rpc behavior.
-            response_or_iterator = await behavior(request_or_iterator, servicer_context)            
             
+            response_or_iterator = await behavior(request_or_iterator, servicer_context)
+
             self.increase_grpc_server_handled_total_counter(grpc_type,
                                                             grpc_service_name,
                                                             grpc_method_name,
@@ -111,21 +107,21 @@ class PromAsyncServerInterceptor(ServerInterceptor):
           grpc_type = grpc_utils.get_method_type(request_streaming, response_streaming)
           
           try:
+            self._metrics["grpc_server_started_counter"].labels(
+                  grpc_type=grpc_type,
+                  grpc_service=grpc_service_name,
+                  grpc_method=grpc_method_name).inc()
             if request_streaming:
-              request_or_iterator = grpc_utils.wrap_iterator_inc_counter(
+              response_or_iterator = grpc_utils.wrap_iterator_inc_counter(
                   behavior(request_or_iterator, servicer_context),
                   self._metrics["grpc_server_stream_msg_received"],
                   grpc_type,
                   grpc_service_name,
                   grpc_method_name)
-            else:
-              self._metrics["grpc_server_started_counter"].labels(
-                  grpc_type=grpc_type,
-                  grpc_service=grpc_service_name,
-                  grpc_method=grpc_method_name).inc()
-              request_or_iterator = behavior(request_or_iterator, servicer_context)
+            else:              
+              response_or_iterator = behavior(request_or_iterator, servicer_context)
 
-            async for obj in request_or_iterator:
+            async for obj in response_or_iterator:
               self._metrics["grpc_server_stream_msg_sent"].labels(
                 grpc_type=grpc_type,
                 grpc_service=grpc_service_name,

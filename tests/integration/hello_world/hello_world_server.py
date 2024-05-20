@@ -45,11 +45,9 @@ class Greeter(hello_world_grpc.GreeterServicer):
     return hello_world_pb2.HelloReply(message="Hello, %s!" % names)
 
   async def SayHelloBidiStream(self, request_iterator, context):
-    try:
-      async for request in request_iterator:
-        yield hello_world_pb2.HelloReply(message="Hello, %s!" % request.name)
-    except Exception as ex:
-      print(ex)
+    async for request in request_iterator:
+      for i in range(request.res):
+        yield hello_world_pb2.HelloReply(message="Hello, %s %s!" % (request.name, i))
 
 
 async def serve():

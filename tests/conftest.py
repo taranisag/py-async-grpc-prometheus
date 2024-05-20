@@ -26,7 +26,7 @@ def start_prometheus_server(port, prom_registry=registry.REGISTRY):
   t.start()
   return httpd
 
-@pytest.fixture(scope='function')
+@pytest_asyncio.fixture(scope='function')
 async def grpc_legacy_server():
   prom_registry = registry.CollectorRegistry(auto_describe=True)
   server = aio.server(futures.ThreadPoolExecutor(max_workers=2),
