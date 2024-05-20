@@ -25,17 +25,17 @@ async def test_grpc_server_handled_latency_seconds_with_normal(
 async def test_grpc_server_handled_latency_seconds_with_unary_stream(
     number_of_res, grpc_server, grpc_stub
 ):  # pylint: disable=unused-argument
-  response_list = []
+  responses = []
   async for response in grpc_stub.SayHelloUnaryStream(
           hello_world_pb2.MultipleHelloResRequest(
               name="unary stream", res=number_of_res
           )
       ):
-    response_list.append(response)
+    responses.append(response)
   target_metric = get_server_metric("grpc_server_handling_seconds")
   # No grpc_server_handled_latency_seconds for streaming response
   assert len(target_metric.samples) > 0
-  assert len(response_list) == number_of_res
+  assert len(responses) == number_of_res
 
 
 @pytest.mark.asyncio
@@ -59,14 +59,14 @@ async def test_grpc_server_handled_latency_seconds_with_stream_unary(
 async def test_grpc_server_handled_latency_seconds_with_bidi_stream(
     number_of_names, number_of_res, grpc_server, grpc_stub, bidi_request_generator
 ):  # pylint: disable=unused-argument  
-  response_list = []
+  responses = []
   async for response in grpc_stub.SayHelloBidiStream(
           bidi_request_generator(number_of_names, number_of_res)
       ):
-      response_list.append(response)
+      responses.append(response)
   target_metric = get_server_metric("grpc_server_handling_seconds")
   assert len(target_metric.samples) > 0
-  assert len(response_list) == number_of_names * number_of_res
+  assert len(responses) == number_of_names * number_of_res
 
 
 @pytest.mark.asyncio
@@ -74,8 +74,9 @@ async def test_grpc_server_handled_latency_seconds_with_bidi_stream(
 async def test_legacy_grpc_server_handled_latency_seconds_with_normal(
     target_count, grpc_legacy_server, grpc_stub
 ):  # pylint: disable=unused-argument
+  responses = []
   for i in range(target_count):
-    await grpc_stub.SayHello(hello_world_pb2.HelloRequest(name=str(i)))
+    responses.append(await grpc_stub.SayHello(hello_world_pb2.HelloRequest(name=str(i))))
   target_metric = get_server_metric("grpc_server_handled_latency_seconds")
   assert reduce(
       lambda acc, x: acc if acc > x.value else x.value,
@@ -107,6 +108,7 @@ async def test_legacy_grpc_server_handled_latency_seconds_with_normal(
       ),
       0
   ) > 0
+  assert len(responses) == target_count
 
 
 @pytest.mark.asyncio
@@ -114,16 +116,16 @@ async def test_legacy_grpc_server_handled_latency_seconds_with_normal(
 async def test_legacy_grpc_server_handled_latency_seconds_with_unary_stream(
     number_of_res, grpc_legacy_server, grpc_stub
 ):  # pylint: disable=unused-argument
-  list(
-      await grpc_stub.SayHelloUnaryStream(
+  responses = []
+  async for response in grpc_stub.SayHelloUnaryStream(
           hello_world_pb2.MultipleHelloResRequest(
               name="unary stream", res=number_of_res
           )
-      )
-  )
+      ):
+    responses.append(response)
   target_metric = get_server_metric("grpc_server_handled_latency_seconds")
-  # No grpc_server_handled_latency_seconds for streaming response
-  assert target_metric.samples == []
+  assert len(target_metric.samples) > 0
+  assert len(responses) == number_of_res
 
 
 @pytest.mark.asyncio
@@ -131,9 +133,10 @@ async def test_legacy_grpc_server_handled_latency_seconds_with_unary_stream(
 async def test_legacy_grpc_server_handled_latency_seconds_with_stream_unary(
     number_of_names, grpc_legacy_server, grpc_stub, stream_request_generator
 ):  # pylint: disable=unused-argument
-  await grpc_stub.SayHelloStreamUnary(
+  responses = []
+  responses.append(await grpc_stub.SayHelloStreamUnary(
       stream_request_generator(number_of_names)
-  )
+  ))
   target_metric = get_server_metric("grpc_server_handled_latency_seconds")
   assert reduce(
       lambda acc, x: acc if acc > x.value else x.value,
@@ -165,6 +168,7 @@ async def test_legacy_grpc_server_handled_latency_seconds_with_stream_unary(
       ),
       0
   ) > 0
+  assert len(responses) > 0
 
 
 @pytest.mark.asyncio
