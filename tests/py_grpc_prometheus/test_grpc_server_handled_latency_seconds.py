@@ -15,8 +15,8 @@ async def test_grpc_server_handled_latency_seconds_with_normal(
   for i in range(target_count):
     response = await grpc_stub.SayHello(hello_world_pb2.HelloRequest(name=str(i)))
     responses.append(response)
-  target_metric = get_server_metric("grpc_server_handled_latency_seconds")
-  assert target_metric.samples == []
+  target_metric = get_server_metric("grpc_server_handling_seconds")
+  assert len(target_metric.samples) > 0
   assert len(responses) == target_count
 
 
@@ -32,9 +32,9 @@ async def test_grpc_server_handled_latency_seconds_with_unary_stream(
           )
       ):
     response_list.append(response)
-  target_metric = get_server_metric("grpc_server_handled_latency_seconds")
+  target_metric = get_server_metric("grpc_server_handling_seconds")
   # No grpc_server_handled_latency_seconds for streaming response
-  assert target_metric.samples == []
+  assert len(target_metric.samples) > 0
   assert len(response_list) == number_of_res
 
 
@@ -47,8 +47,8 @@ async def test_grpc_server_handled_latency_seconds_with_stream_unary(
   responses.append(await grpc_stub.SayHelloStreamUnary(
       stream_request_generator(number_of_names)
   ))
-  target_metric = get_server_metric("grpc_server_handled_latency_seconds")
-  assert target_metric.samples == []
+  target_metric = get_server_metric("grpc_server_handling_seconds")
+  assert len(target_metric.samples) > 0
   assert len(responses) > 0
 
 
@@ -58,19 +58,15 @@ async def test_grpc_server_handled_latency_seconds_with_stream_unary(
 )
 async def test_grpc_server_handled_latency_seconds_with_bidi_stream(
     number_of_names, number_of_res, grpc_server, grpc_stub, bidi_request_generator
-):  # pylint: disable=unused-argument
-  
-  try:
-    response_list = []
-    async for response in grpc_stub.SayHelloBidiStream(
-            bidi_request_generator(number_of_names, number_of_res)
-        ):
-        response_list.append(response)
-    target_metric = get_server_metric("grpc_server_handled_latency_seconds")
-    assert target_metric.samples == []
-    assert len(response_list) == number_of_res
-  except Exception as ex:
-    print(ex)
+):  # pylint: disable=unused-argument  
+  response_list = []
+  async for response in grpc_stub.SayHelloBidiStream(
+          bidi_request_generator(number_of_names, number_of_res)
+      ):
+      response_list.append(response)
+  target_metric = get_server_metric("grpc_server_handling_seconds")
+  assert len(target_metric.samples) > 0
+  assert len(response_list) == number_of_names * number_of_res
 
 
 @pytest.mark.asyncio
@@ -185,5 +181,5 @@ async def test_legacy_grpc_server_handled_latency_seconds_with_bidi_stream(
       ):
         responses.append(response)
   target_metric = get_server_metric("grpc_server_handled_latency_seconds")
-  assert target_metric.samples == []
-  assert len(responses) == number_of_res
+  assert len(target_metric.samples) > 0
+  assert len(responses) == number_of_names * number_of_res
