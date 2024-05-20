@@ -112,16 +112,14 @@ class PromAsyncServerInterceptor(ServerInterceptor):
                   grpc_service=grpc_service_name,
                   grpc_method=grpc_method_name).inc()
             if request_streaming:
-              response_or_iterator = grpc_utils.wrap_iterator_inc_counter(
-                  behavior(request_or_iterator, servicer_context),
+              request_or_iterator = grpc_utils.wrap_iterator_inc_counter(
+                  request_or_iterator,
                   self._metrics["grpc_server_stream_msg_received"],
                   grpc_type,
                   grpc_service_name,
                   grpc_method_name)
-            else:              
-              response_or_iterator = behavior(request_or_iterator, servicer_context)
 
-            async for obj in response_or_iterator:
+            async for obj in behavior(request_or_iterator, servicer_context):
               self._metrics["grpc_server_stream_msg_sent"].labels(
                 grpc_type=grpc_type,
                 grpc_service=grpc_service_name,
