@@ -1,8 +1,9 @@
 import logging
 import sys
 import time
-
+import asyncio
 import grpc
+from grpc import aio
 from prometheus_client import start_http_server
 
 import tests.integration.hello_world.hello_world_pb2 as hello_world_pb2
@@ -12,15 +13,15 @@ from py_async_grpc_prometheus.prometheus_async_client_interceptor import PromAsy
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 _LOGGER = logging.getLogger(__name__)
 
-def call_server():
-  channel = grpc.intercept_channel(grpc.insecure_channel("localhost:50051"),
-                                   PromAsyncClientInterceptor())
+async def call_server():
+  channel = aio.insecure_channel("localhost:50051",
+                                 interceptors=(PromAsyncClientInterceptor(),))
   stub = hello_world_grpc.GreeterStub(channel)
 
   # Call the unary-unary.
   for _ in range(5):
     try:
-      response = stub.SayHello(hello_world_pb2.HelloRequest(name="Unary"))
+      response = await stub.SayHello(hello_world_pb2.HelloRequest(name="Unary"))
       _LOGGER.info("Unary response: %s", response.message)
       _LOGGER.info("")
     except grpc.RpcError:
@@ -56,10 +57,10 @@ def generate_requests(name):
     yield hello_world_pb2.HelloRequest(name="%s %s" % (name, i))
 
 
-def run():
+async def run():
   logging.basicConfig(level=logging.INFO, format="%(asctime)-15s %(message)s")
   _LOGGER.info("Starting py-grpc-promtheus hello word server")
-  call_server()
+  await call_server()
   start_http_server(50053)
   _LOGGER.info("Started py-grpc-promtheus client, metrics is located at http://localhost:50053")
   try:
@@ -70,4 +71,6 @@ def run():
 
 
 if __name__ == "__main__":
-  run()
+ loop = asyncio.get_event_loop()
+ loop.run_until_complete(run())
+ loop.close()
