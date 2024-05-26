@@ -31,7 +31,6 @@ class PromAsyncServerInterceptor(ServerInterceptor):
     self._metrics = server_metrics.init_metrics(registry)
     self._skip_exceptions = skip_exceptions
     self._log_exceptions = log_exceptions
-    self._code_to_status_mapping = {x.value[0]: x for x in grpc.StatusCode}
 
   async def intercept_service(self, continuation, handler_call_details):
     """
@@ -166,7 +165,7 @@ class PromAsyncServerInterceptor(ServerInterceptor):
     if servicer_context.code() is None:
       return StatusCode.OK
 
-    return self._code_to_status_mapping[servicer_context.code()]
+    return servicer_context.code()
 
   def _compute_error_code(self, grpc_exception):
     if isinstance(grpc_exception, grpc.Call):

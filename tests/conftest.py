@@ -47,7 +47,7 @@ async def grpc_legacy_server():
   prom_server.shutdown()
   prom_server.server_close()
 
-@pytest.fixture(scope='function')
+@pytest_asyncio.fixture(scope='function')
 async def grpc_server_with_exception_handling():
   prom_registry = registry.CollectorRegistry(auto_describe=True)
   server = aio.server(futures.ThreadPoolExecutor(max_workers=2),
