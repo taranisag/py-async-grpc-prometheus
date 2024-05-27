@@ -5,3 +5,4 @@ pytest
 pytest-asyncio
 requests
 coverage
+twine
