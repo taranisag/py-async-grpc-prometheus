@@ -29,16 +29,16 @@ async def call_server():
 
   # Call the unary stream.
   _LOGGER.info("Running Unary Stream client")
-  response_iter = stub.SayHelloUnaryStream(hello_world_pb2.HelloRequest(name="unary stream"))
+  response_iter = stub.SayHelloUnaryStream(hello_world_pb2.MultipleHelloResRequest(name="unary stream", res=2))
   _LOGGER.info("Response for Unary Stream")
-  for response in response_iter:
+  async for response in response_iter:
     _LOGGER.info("Unary Stream response item: %s", response.message)
   _LOGGER.info("")
 
   # Call the stream_unary.
   try:
     _LOGGER.info("Running Stream Unary client")
-    response = stub.SayHelloStreamUnary(generate_requests("Stream Unary"))
+    response = await stub.SayHelloStreamUnary(generate_requests("Stream Unary", 2))
     _LOGGER.info("Stream Unary response: %s", response.message)
     _LOGGER.info("")
   except grpc.RpcError:
@@ -46,15 +46,15 @@ async def call_server():
 
   # Call stream & stream.
   _LOGGER.info("Running Bidi Stream client")
-  response_iter = stub.SayHelloBidiStream(generate_requests("Bidi Stream"))
-  for response in response_iter:
+  response_iter = stub.SayHelloBidiStream(generate_requests("Bidi Stream", 2))
+  async for response in response_iter:
     _LOGGER.info("Bidi Stream response item: %s", response.message)
   _LOGGER.info("")
 
 
-def generate_requests(name):
+def generate_requests(name, res):
   for i in range(10):
-    yield hello_world_pb2.HelloRequest(name="%s %s" % (name, i))
+    yield hello_world_pb2.MultipleHelloResRequest(name="%s %s" % (name, i), res=res)
 
 
 async def run():
@@ -65,7 +65,7 @@ async def run():
   _LOGGER.info("Started py-grpc-promtheus client, metrics is located at http://localhost:50053")
   try:
     while True:
-      time.sleep(_ONE_DAY_IN_SECONDS)
+      await asyncio.sleep(_ONE_DAY_IN_SECONDS)
   except KeyboardInterrupt:
     sys.exit()
 

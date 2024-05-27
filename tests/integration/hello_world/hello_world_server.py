@@ -68,8 +68,7 @@ async def serve():
   _LOGGER.info("Started py-async-grpc-promtheus hello word server, grpc at localhost:50051, "
                "metrics at http://localhost:50052")
   try:
-    while True:
-      time.sleep(_ONE_DAY_IN_SECONDS)
+    await server.wait_for_termination()
   except KeyboardInterrupt:
     await server.stop(0)
 
