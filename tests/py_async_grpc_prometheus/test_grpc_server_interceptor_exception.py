@@ -3,7 +3,7 @@ from unittest.mock import patch
 import pytest
 import grpc
 
-from tests.py_grpc_prometheus.utils import get_server_metric
+from tests.py_async_grpc_prometheus.utils import get_server_metric
 from tests.integration.hello_world import hello_world_pb2
 
 

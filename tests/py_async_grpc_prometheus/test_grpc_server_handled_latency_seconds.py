@@ -2,7 +2,7 @@ from functools import reduce
 
 import pytest
 
-from tests.py_grpc_prometheus.utils import get_server_metric
+from tests.py_async_grpc_prometheus.utils import get_server_metric
 from tests.integration.hello_world import hello_world_pb2
 
 

@@ -8,7 +8,7 @@ initialize-development:
 
 .PHONY: test
 test:
-	@coverage run --source=py_grpc_prometheus -m pytest
+	@coverage run --source=py_async_grpc_prometheus -m pytest
 	@coverage report -m
 
 # Run pre-commit for all
