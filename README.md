@@ -1,4 +1,4 @@
-# py-grpc-prometheus
+# py-async-grpc-prometheus
 
 Instrument library to provide prometheus metrics similar to:
 
@@ -35,11 +35,11 @@ pip install py-grpc-prometheus
 Client metrics monitoring is done by intercepting the gPRC channel.
 
 ```python
-import grpc
-from py_grpc_prometheus.prometheus_client_interceptor import PromClientInterceptor
+from grpc import aio
+from py_async_grpc_prometheus.prometheus_async_client_interceptor import PromAsyncClientInterceptor
 
-channel = grpc.intercept_channel(grpc.insecure_channel('server:6565'),
-                                         PromClientInterceptor())
+channel = aio.insecure_channel("server:6565",
+                                 interceptors=(PromAsyncClientInterceptor(),))
 # Start an end point to expose metrics.
 start_http_server(metrics_port)
 ```
@@ -49,9 +49,9 @@ Server metrics are exposed by adding the interceptor when the gRPC server is sta
 `tests/integration/hello_world/hello_world_client.py` for the complete example.
 
 ```python
-import grpc
+from grpc import aio
 from concurrent import futures
-from py_grpc_prometheus.prometheus_server_interceptor import PromServerInterceptor
+from py_async_grpc_prometheus.prometheus_server_interceptor import PromAsyncServerInterceptor
 from prometheus_client import start_http_server
 ```
 
@@ -59,8 +59,10 @@ Start the gRPC server with the interceptor, take a look at
 `tests/integration/hello_world/hello_world_server.py` for the complete example.
 
 ```python
-server = grpc.server(futures.ThreadPoolExecutor(max_workers=10),
-                         interceptors=(PromServerInterceptor(),))
+server = aio.server(futures.ThreadPoolExecutor(max_workers=10),
+                       interceptors=(
+                           PromAsyncServerInterceptor(),
+                       ))
 # Start an end point to expose metrics.
 start_http_server(metrics_port)
 ```
@@ -74,8 +76,10 @@ the latency monitoring metrics are disabled by default. To enable them please ca
 in your interceptor initialization code:
 
 ```jsoniq
-server = grpc.server(futures.ThreadPoolExecutor(max_workers=10),
-                     interceptors=(PromServerInterceptor(enable_handling_time_histogram=True),))
+server = aio.server(futures.ThreadPoolExecutor(max_workers=10),
+                       interceptors=(
+                           PromAsyncServerInterceptor(enable_handling_time_histogram=True),
+                       ))
 ```
 
 After the call completes, its handling time will be recorded in a [Prometheus histogram](https://prometheus.io/docs/concepts/metric_types/#histogram)
@@ -119,8 +123,10 @@ In order to be able to use these legacy metrics for backwards compatibility, the
 
 For example, to enable the server side legacy metrics:
 ```jsoniq
-server = grpc.server(futures.ThreadPoolExecutor(max_workers=10),
-                     interceptors=(PromServerInterceptor(legacy=True),))
+server = aio.server(futures.ThreadPoolExecutor(max_workers=10),
+                       interceptors=(
+                           PromAsyncServerInterceptor(legacy=True),
+                       ))
 ```
 
 ## How to run and test
@@ -136,3 +142,4 @@ make test
 - https://grpc.io/grpc/python/grpc.html
 - https://github.com/census-instrumentation/opencensus-python/blob/master/opencensus/trace/ext/grpc/utils.py
 - https://github.com/opentracing-contrib/python-grpc/blob/b4bdc7ce81fa75ede00f7c6bcf5dab8fae47332a/grpc_opentracing/grpcext/grpc_interceptor/server_interceptor.py
+
