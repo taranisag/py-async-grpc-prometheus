@@ -165,8 +165,7 @@ class PromAsyncServerInterceptor(ServerInterceptor):
   def _compute_status_code(self, servicer_context):
     if servicer_context.code() is None:
       return StatusCode.OK
-
-    if isinstance(servicer_context.code(), int):
+    elif isinstance(servicer_context.code(), int):
       return self._code_to_status_mapping[servicer_context.code()]
     return servicer_context.code()
 
