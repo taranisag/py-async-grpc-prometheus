@@ -136,7 +136,7 @@ make test
 ```
 
 ## TODO:
-- Unit test with https://github.com/census-instrumentation/opencensus-python/blob/master/tests/unit/trace/ext/grpc/test_server_interceptor.py
+- Test prometheus_async_client_interceptor
 
 ## Reference
 - https://grpc.io/grpc/python/grpc.html
