@@ -28,7 +28,7 @@ Currently, the library has the parity metrics with the Java and Go library.
 ## How to use
 
 ```
-pip install py-grpc-prometheus
+pip install py-async-grpc-prometheus
 ```
 
 ## Client side:
@@ -136,7 +136,7 @@ make test
 ```
 
 ## TODO:
-- Unit test with https://github.com/census-instrumentation/opencensus-python/blob/master/tests/unit/trace/ext/grpc/test_server_interceptor.py
+- Test prometheus_async_client_interceptor
 
 ## Reference
 - https://grpc.io/grpc/python/grpc.html
