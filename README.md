@@ -28,7 +28,7 @@ Currently, the library has the parity metrics with the Java and Go library.
 ## How to use
 
 ```
-pip install py-grpc-prometheus
+pip install py-async-grpc-prometheus
 ```
 
 ## Client side:
