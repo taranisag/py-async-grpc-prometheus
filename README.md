@@ -51,7 +51,7 @@ Server metrics are exposed by adding the interceptor when the gRPC server is sta
 ```python
 from grpc import aio
 from concurrent import futures
-from py_async_grpc_prometheus.prometheus_server_interceptor import PromAsyncServerInterceptor
+from py_async_grpc_prometheus.prometheus_async_server_interceptor import PromAsyncServerInterceptor
 from prometheus_client import start_http_server
 ```
 
