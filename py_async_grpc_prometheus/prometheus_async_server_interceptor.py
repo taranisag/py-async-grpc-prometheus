@@ -118,12 +118,12 @@ class PromAsyncServerInterceptor(ServerInterceptor):
                   grpc_service_name,
                   grpc_method_name)
 
-            async for obj in behavior(request_or_iterator, servicer_context):
+            async for behavior_response in behavior(request_or_iterator, servicer_context):
               self._metrics["grpc_server_stream_msg_sent"].labels(
                 grpc_type=grpc_type,
                 grpc_service=grpc_service_name,
                 grpc_method=grpc_method_name).inc()
-              yield obj
+              yield behavior_response
 
             self.increase_grpc_server_handled_total_counter(grpc_type,
                                                             grpc_service_name,
@@ -147,8 +147,8 @@ class PromAsyncServerInterceptor(ServerInterceptor):
           if self._skip_exceptions:
             if self._log_exceptions:
               _LOGGER.error(e)
-            async for obj in behavior(request_or_iterator, servicer_context):
-              yield obj
+            async for behavior_response in behavior(request_or_iterator, servicer_context):
+              yield behavior_response
           raise e
       
       if response_streaming:
