@@ -25,6 +25,8 @@ class Greeter(hello_world_grpc.GreeterServicer):
       raise grpc.RpcError()
     if request.name == "unknownError":
       raise Exception(request.name)
+    if request.name == "delay":
+      await asyncio.sleep(2)
     return hello_world_pb2.HelloReply(message="Hello, %s!" % request.name)
 
   async def SayHelloUnaryStream(self, request, context):

@@ -2,6 +2,7 @@ from functools import reduce
 
 import pytest
 
+from tests.conftest import GrpcStub
 from tests.py_async_grpc_prometheus.utils import get_server_metric
 from tests.integration.hello_world import hello_world_pb2
 
@@ -58,7 +59,7 @@ async def test_grpc_server_handled_latency_seconds_with_stream_unary(
 )
 async def test_grpc_server_handled_latency_seconds_with_bidi_stream(
     number_of_names, number_of_res, grpc_server, grpc_stub, bidi_request_generator
-):  # pylint: disable=unused-argument  
+):  # pylint: disable=unused-argument
   responses = []
   async for response in grpc_stub.SayHelloBidiStream(
           bidi_request_generator(number_of_names, number_of_res)
