@@ -51,7 +51,7 @@ class PromAsyncServerInterceptor(ServerInterceptor):
         try:
           start = default_timer()
           grpc_type = grpc_utils.get_method_type(request_streaming, response_streaming)
-
+          
           try:
             self._metrics["grpc_server_started_counter"].labels(
                   grpc_type=grpc_type,
@@ -64,7 +64,7 @@ class PromAsyncServerInterceptor(ServerInterceptor):
                   grpc_type,
                   grpc_service_name,
                   grpc_method_name)
-
+            
             response_or_iterator = await behavior(request_or_iterator, servicer_context)
 
             self.increase_grpc_server_handled_total_counter(grpc_type,
@@ -73,7 +73,7 @@ class PromAsyncServerInterceptor(ServerInterceptor):
                                                             self._compute_status_code(
                                                                 servicer_context).name)
             return response_or_iterator
-
+          
           except Exception as e:
             if not self._skip_exceptions:
               status_code = self._compute_status_code(servicer_context)
@@ -87,7 +87,7 @@ class PromAsyncServerInterceptor(ServerInterceptor):
 
           finally:
             self._increase_grpc_server_handled_latency(grpc_type, grpc_service_name, grpc_method_name, start)
-
+        
         except Exception as e: # pylint: disable=broad-except
           # Allow user to skip the exceptions in order to maintain
           # the basic functionality in the server
@@ -105,7 +105,7 @@ class PromAsyncServerInterceptor(ServerInterceptor):
         try:
           start = default_timer()
           grpc_type = grpc_utils.get_method_type(request_streaming, response_streaming)
-
+          
           try:
             self._metrics["grpc_server_started_counter"].labels(
                   grpc_type=grpc_type,
@@ -131,7 +131,7 @@ class PromAsyncServerInterceptor(ServerInterceptor):
                                                             grpc_method_name,
                                                             self._compute_status_code(
                                                                 servicer_context).name)
-
+          
           except grpc.RpcError as exc:
             self.increase_grpc_server_handled_total_counter(
                 grpc_type,
@@ -143,7 +143,7 @@ class PromAsyncServerInterceptor(ServerInterceptor):
 
           finally:
             self._increase_grpc_server_handled_latency(grpc_type, grpc_service_name, grpc_method_name, start)
-
+        
         except Exception as e:
           if self._skip_exceptions:
             if self._log_exceptions:
@@ -151,11 +151,11 @@ class PromAsyncServerInterceptor(ServerInterceptor):
             async for behavior_response in behavior(request_or_iterator, servicer_context):
               yield behavior_response
           raise e
-
+      
       if response_streaming:
         return new_response_stream_behavior
       return new_response_unary_behavior
-
+      
     response = await continuation(handler_call_details)
     optional_any = self._wrap_rpc_behavior(response, metrics_wrapper)
 
@@ -189,7 +189,7 @@ class PromAsyncServerInterceptor(ServerInterceptor):
           grpc_service=grpc_service_name,
           grpc_method=grpc_method_name,
           grpc_code=grpc_code).inc()
-
+      
   def _increase_grpc_server_handled_latency(self, grpc_type, grpc_service_name, grpc_method_name, start):
     if self._legacy:
         self._metrics["legacy_grpc_server_handled_latency_seconds"].labels(
