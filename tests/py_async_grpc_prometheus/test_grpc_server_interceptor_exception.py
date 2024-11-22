@@ -4,7 +4,7 @@ import pytest
 import grpc
 
 from tests.conftest import GrpcStub
-from tests.py_async_grpc_prometheus.utils import get_server_metric
+from tests.py_async_grpc_prometheus.utils import get_metric
 from tests.integration.hello_world import hello_world_pb2
 
 
@@ -17,7 +17,7 @@ async def test_grpc_server_handled_with_server_error(
     with pytest.raises(Exception):
       await grpc_stub.stub.SayHello(hello_world_pb2.HelloRequest(name="unknownError"))
 
-  target_metric = get_server_metric("grpc_server_handled", grpc_stub.prom_server_port)
+  target_metric = get_metric("grpc_server_handled", grpc_stub.prom_server_port)
   print(target_metric.samples[0].labels["grpc_code"])
   assert target_metric.samples[0].value == target_count
   assert target_metric.samples[0].labels["grpc_code"] == "UNKNOWN"
@@ -32,7 +32,7 @@ async def test_grpc_server_handled_with_rpc_error(
     with pytest.raises(grpc.RpcError):
       await grpc_stub.stub.SayHello(hello_world_pb2.HelloRequest(name="rpcError"))
 
-  target_metric = get_server_metric("grpc_server_handled", grpc_stub.prom_server_port)
+  target_metric = get_metric("grpc_server_handled", grpc_stub.prom_server_port)
   assert target_metric.samples[0].value == target_count
   assert target_metric.samples[0].labels["grpc_code"] == "INVALID_ARGUMENT"
 
@@ -63,7 +63,7 @@ async def test_grpc_server_handled_with_server_error_and_skip_exceptions(
                 hello_world_pb2.HelloRequest(name="unknownError")
             )
 
-    target_metric = get_server_metric("grpc_server_handled", grpc_stub_with_exception_handling.prom_server_port)
+    target_metric = get_metric("grpc_server_handled", grpc_stub_with_exception_handling.prom_server_port)
     assert target_metric.samples == []
 
 
@@ -83,7 +83,7 @@ async def test_grpc_server_handled_with_interceptor_error_and_skip_exceptions(
             )
             assert response.message == "Hello, unary!"
 
-    target_metric = get_server_metric(
+    target_metric = get_metric(
         "grpc_server_handled", grpc_stub_with_exception_handling.prom_server_port
     )
     assert target_metric.samples == []

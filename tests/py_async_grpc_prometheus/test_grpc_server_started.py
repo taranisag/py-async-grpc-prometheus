@@ -1,7 +1,7 @@
 import pytest
 
 from tests.conftest import GrpcStub
-from tests.py_async_grpc_prometheus.utils import get_server_metric
+from tests.py_async_grpc_prometheus.utils import get_metric
 from tests.integration.hello_world import hello_world_pb2
 
 
@@ -14,7 +14,7 @@ async def test_grpc_server_started_with_normal(
   for i in range(target_count):
     response = await grpc_stub.stub.SayHello(hello_world_pb2.HelloRequest(name=str(i)))
     responses.append(response)
-  target_metric = get_server_metric("grpc_server_started", grpc_stub.prom_server_port)
+  target_metric = get_metric("grpc_server_started", grpc_stub.prom_server_port)
   assert target_metric.samples[0].value == target_count
   assert len(responses) == target_count
 
@@ -31,7 +31,7 @@ async def test_grpc_server_started_with_unary_stream(
           )
       ):
     responses.append(response)
-  target_metric = get_server_metric("grpc_server_started", grpc_stub.prom_server_port)
+  target_metric = get_metric("grpc_server_started", grpc_stub.prom_server_port)
   # Only one request sent
   assert target_metric.samples[0].value == 1
   assert len(responses) == number_of_res
@@ -46,7 +46,7 @@ async def test_grpc_server_started_with_stream_unary(
   responses.append(await grpc_stub.stub.SayHelloStreamUnary(
       stream_request_generator(number_of_names)
   ))
-  target_metric = get_server_metric("grpc_server_started", grpc_stub.prom_server_port)
+  target_metric = get_metric("grpc_server_started", grpc_stub.prom_server_port)
   assert len(target_metric.samples) == 1
   assert len(responses) > 0
 
@@ -63,6 +63,6 @@ async def test_grpc_server_started_with_bidi_stream(
           bidi_request_generator(number_of_names, number_of_res)
       ):
         responses.append(response)
-  target_metric = get_server_metric("grpc_server_started", grpc_stub.prom_server_port)
+  target_metric = get_metric("grpc_server_started", grpc_stub.prom_server_port)
   assert len(target_metric.samples) == 1
   assert len(responses) == number_of_names * number_of_res
