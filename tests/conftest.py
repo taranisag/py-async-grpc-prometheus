@@ -10,7 +10,7 @@ import grpc
 from grpc import aio
 from prometheus_client import exposition, registry
 
-from py_async_grpc_prometheus.prometheus_async_client_interceptor import PromAsyncClientInterceptor
+from py_async_grpc_prometheus.prometheus_async_client_interceptor import get_client_interceptors
 from py_async_grpc_prometheus.prometheus_async_server_interceptor import PromAsyncServerInterceptor
 from tests.integration.hello_world import hello_world_pb2_grpc as hello_world_grpc
 from tests.integration.hello_world.hello_world_server import Greeter
@@ -93,7 +93,7 @@ async def _grpc_stub(server, port, prom_server) -> AsyncGenerator[GrpcStub, None
     prom_registry = registry.CollectorRegistry(auto_describe=True)
     channel = aio.insecure_channel(
         f"localhost:{port}",
-        interceptors=(PromAsyncClientInterceptor(registry=prom_registry, enable_client_handling_time_histogram=True),),
+        interceptors=get_client_interceptors(registry=prom_registry, enable_client_handling_time_histogram=True, enable_client_stream_send_time_histogram=True),
     )
     stub = hello_world_grpc.GreeterStub(channel)
     prom_client_server = start_prometheus_server(0, prom_registry)
@@ -126,14 +126,14 @@ async def grpc_stub_legacy() -> AsyncGenerator[GrpcStub, None]:
 
 @pytest.fixture(scope="module")
 def stream_request_generator():
-  def _generate_requests(number_of_names):
+  async def _generate_requests(number_of_names):
     for i in range(number_of_names):
       yield hello_world_pb2.HelloRequest(name="{}".format(i))
   return _generate_requests
 
 @pytest.fixture(scope="module")
 def bidi_request_generator():
-  def _generate_bidi_requests(number_of_names, number_of_res):
+  async def _generate_bidi_requests(number_of_names, number_of_res):
     for i in range(number_of_names):
       yield hello_world_pb2.MultipleHelloResRequest(name="{}".format(i), res=number_of_res)
   return _generate_bidi_requests

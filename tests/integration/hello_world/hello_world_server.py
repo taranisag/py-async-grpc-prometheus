@@ -34,6 +34,8 @@ class Greeter(hello_world_grpc.GreeterServicer):
       context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
       context.set_details('Consarnit!')
       return
+    if request.name == "delay":
+      await asyncio.sleep(2)
     for i in range(request.res):
       yield hello_world_pb2.HelloReply(
           message="Hello, %s %s!" % (request.name, i)
@@ -43,6 +45,8 @@ class Greeter(hello_world_grpc.GreeterServicer):
   async def SayHelloStreamUnary(self, request_iterator, context):
     names = ""
     async for request in request_iterator:
+      if request.name == "delay":
+        await asyncio.sleep(2)
       names += request.name + " "
     return hello_world_pb2.HelloReply(message="Hello, %s!" % names)
 

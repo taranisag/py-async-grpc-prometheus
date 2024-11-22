@@ -8,14 +8,14 @@ from prometheus_client import start_http_server
 
 import tests.integration.hello_world.hello_world_pb2 as hello_world_pb2
 import tests.integration.hello_world.hello_world_pb2_grpc as hello_world_grpc
-from py_async_grpc_prometheus.prometheus_async_client_interceptor import PromAsyncClientInterceptor
+from py_async_grpc_prometheus.prometheus_async_client_interceptor import get_client_interceptors
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 _LOGGER = logging.getLogger(__name__)
 
 async def call_server():
   channel = aio.insecure_channel("localhost:50051",
-                                 interceptors=(PromAsyncClientInterceptor(),))
+                                 interceptors=get_client_interceptors())
   stub = hello_world_grpc.GreeterStub(channel)
 
   # Call the unary-unary.
