@@ -306,7 +306,7 @@ class PromAsyncClientInterceptor(_PromAsyncUnaryUnaryClientInterceptor,
         legacy=False,
         registry=REGISTRY,
     ):
-        metrics = init_metrics(REGISTRY)
+        metrics = init_metrics(registry)
         _PromAsyncUnaryUnaryClientInterceptor.__init__(
             self,
             metrics,
@@ -355,7 +355,7 @@ def get_client_interceptors(
     """
     # In a future grpc version the following could be done
     # if supports_single_interceptor(version(grpc)):
-    #   return [PromAsyncClientInterceptor(enable_client_handling_time_histogram, enable_client_stream_receive_time_histogram, enable_client_stream_send_time_histogram, legacy, registry)]
+    # return [PromAsyncClientInterceptor(enable_client_handling_time_histogram, enable_client_stream_receive_time_histogram, enable_client_stream_send_time_histogram, legacy, registry)]
     metrics = init_metrics(registry)
     return [
         _PromAsyncUnaryUnaryClientInterceptor(
