@@ -20,16 +20,22 @@ run-test:
 
 # Fix the import path. Use pipe for sed to avoid the difference between Mac and GNU sed
 compile-protos:
-	@docker run --rm -v $(PWD):$(PWD) -w $(PWD) znly/protoc \
-	  --python_out=tests/integration//hello_world \
-	  -I tests/integration/protos \
-	  tests/integration/protos/*.proto
-	@docker run --rm -v $(PWD):$(PWD) -w $(PWD) znly/protoc \
-      --plugin=protoc-gen-grpc=/usr/bin/grpc_python_plugin \
-      --python_out=tests/integration//hello_world  \
-      --grpc_out=tests/integration//hello_world  \
-      -I tests/integration/protos \
+	@docker run --entrypoint protoc --rm -v $(PWD):$(PWD) -w $(PWD) namely/protoc-all \
+      --plugin=protoc-gen-grpc=/usr/local/bin/grpc_python_plugin \
+      --python_out=./  \
+	  --mypy_out=./ \
+      --grpc_out=./  \
+	  --mypy_grpc_out=./ \
+      -I ./ \
       tests/integration/protos/*.proto
+	@docker run --entrypoint protoc --rm -v $(PWD):$(PWD) -w $(PWD) namely/protoc-all \
+      --plugin=protoc-gen-grpc=/usr/local/bin/grpc_python_plugin \
+      --python_out=./  \
+	  --mypy_out=./ \
+      --grpc_out=./  \
+	  --mypy_grpc_out=./ \
+      -I ./ \
+      tests/integration/hello_world/*.proto
 
 run-test-server:
 	python -m tests.integration.hello_world.hello_world_server

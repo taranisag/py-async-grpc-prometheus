@@ -1,13 +1,16 @@
+import asyncio
+import threading
 from concurrent import futures
 import threading
 import asyncio
+from typing import AsyncGenerator
 import pytest
 import pytest_asyncio
 import grpc
 from grpc import aio
 from prometheus_client import exposition, registry
 
-from py_async_grpc_prometheus.prometheus_async_client_interceptor import PromAsyncClientInterceptor
+from py_async_grpc_prometheus.prometheus_async_client_interceptor import get_client_interceptors
 from py_async_grpc_prometheus.prometheus_async_server_interceptor import PromAsyncServerInterceptor
 from tests.integration.hello_world import hello_world_pb2_grpc as hello_world_grpc
 from tests.integration.hello_world.hello_world_server import Greeter
@@ -26,7 +29,6 @@ def start_prometheus_server(port, prom_registry=registry.REGISTRY):
   t.start()
   return httpd
 
-@pytest_asyncio.fixture(scope='function')
 async def grpc_legacy_server():
   prom_registry = registry.CollectorRegistry(auto_describe=True)
   server = aio.server(futures.ThreadPoolExecutor(max_workers=2),
@@ -38,16 +40,12 @@ async def grpc_legacy_server():
                            ),
                        ))
   hello_world_grpc.add_GreeterServicer_to_server(Greeter(), server)
-  server.add_insecure_port("[::]:50051")
+  port = server.add_insecure_port("[::]:0")
   await server.start()
-  prom_server = start_prometheus_server(50052, prom_registry)
+  prom_server = start_prometheus_server(0, prom_registry)
 
-  yield server
-  await server.stop(0)
-  prom_server.shutdown()
-  prom_server.server_close()
+  return server, port, prom_server
 
-@pytest_asyncio.fixture(scope='function')
 async def grpc_server_with_exception_handling():
   prom_registry = registry.CollectorRegistry(auto_describe=True)
   server = aio.server(futures.ThreadPoolExecutor(max_workers=2),
@@ -59,58 +57,83 @@ async def grpc_server_with_exception_handling():
                            ),
                        ))
   hello_world_grpc.add_GreeterServicer_to_server(Greeter(), server)
-  server.add_insecure_port("[::]:50051")
+  port = server.add_insecure_port("[::]:0")
   await server.start()
-  prom_server = start_prometheus_server(50052, prom_registry)
+  prom_server = start_prometheus_server(0, prom_registry)
 
-  yield server
-  await server.stop(0)
-  prom_server.shutdown()
-  prom_server.server_close()
+  return server, port, prom_server
 
-@pytest_asyncio.fixture(scope='function')
 async def grpc_server():
-  prom_registry = registry.CollectorRegistry(auto_describe=True)
-  server = aio.server(futures.ThreadPoolExecutor(max_workers=2),
-                       interceptors=(
-                           PromAsyncServerInterceptor(
-                               enable_handling_time_histogram=True,
-                               registry=prom_registry
-                           ),
-                       ))
-  hello_world_grpc.add_GreeterServicer_to_server(Greeter(), server)
-  server.add_insecure_port("[::]:50051")
-  await server.start()
-  prom_server = start_prometheus_server(50052, prom_registry)
+    prom_registry = registry.CollectorRegistry(auto_describe=True)
+    server = aio.server(
+        futures.ThreadPoolExecutor(max_workers=2),
+        interceptors=(
+            PromAsyncServerInterceptor(
+                enable_handling_time_histogram=True, registry=prom_registry
+            ),
+        ),
+    )
+    hello_world_grpc.add_GreeterServicer_to_server(Greeter(), server)
+    port = server.add_insecure_port("[::]:0")
+    await server.start()
+    prom_server = start_prometheus_server(0, prom_registry)
+    return server, port, prom_server
 
-  yield server
-  await server.stop(0)
-  prom_server.shutdown()
-  prom_server.server_close()
+class GrpcStub:
+    stub: hello_world_grpc.GreeterStub
+    prom_server_port: int
+    prom_client_port: int
 
-@pytest_asyncio.fixture(scope='function')
-async def grpc_stub():
-  prom_registry = registry.CollectorRegistry(auto_describe=True)
-  channel = aio.insecure_channel("localhost:50051",
-                                 interceptors=(PromAsyncClientInterceptor(registry=prom_registry),))
-  stub = hello_world_grpc.GreeterStub(channel)
-  prom_server = start_prometheus_server(50053, prom_registry)
+    def __init__(self, stub, prom_server_port, prom_client_port):
+        self.stub = stub
+        self.prom_server_port = prom_server_port
+        self.prom_client_port = prom_client_port
 
-  yield stub
+async def _grpc_stub(server, port, prom_server) -> AsyncGenerator[GrpcStub, None]:
+    prom_registry = registry.CollectorRegistry(auto_describe=True)
+    channel = aio.insecure_channel(
+        f"localhost:{port}",
+        interceptors=get_client_interceptors(registry=prom_registry, enable_client_handling_time_histogram=True, enable_client_stream_send_time_histogram=True),
+    )
+    stub = hello_world_grpc.GreeterStub(channel)
+    prom_client_server = start_prometheus_server(0, prom_registry)
 
-  await channel.close()
-  prom_server.shutdown()
+    yield GrpcStub(stub, prom_server.server_port, prom_client_server.server_port)
+
+    await channel.close()
+    prom_client_server.shutdown()
+    prom_client_server.server_close()
+
+    await server.stop(0)
+    prom_server.shutdown()
+    prom_server.server_close()
+
+@pytest_asyncio.fixture(scope="function")
+async def grpc_stub() -> AsyncGenerator[GrpcStub, None]:
+    async for stub in _grpc_stub(*(await grpc_server())):
+        yield stub
+
+@pytest_asyncio.fixture(scope="function")
+async def grpc_stub_with_exception_handling() -> AsyncGenerator[GrpcStub, None]:
+    async for stub in _grpc_stub(*(await grpc_server_with_exception_handling())):
+        yield stub
+
+@pytest_asyncio.fixture(scope="function")
+async def grpc_stub_legacy() -> AsyncGenerator[GrpcStub, None]:
+    async for stub in _grpc_stub(*(await grpc_legacy_server())):
+        yield stub
+
 
 @pytest.fixture(scope="module")
 def stream_request_generator():
-  def _generate_requests(number_of_names):
+  async def _generate_requests(number_of_names):
     for i in range(number_of_names):
       yield hello_world_pb2.HelloRequest(name="{}".format(i))
   return _generate_requests
 
 @pytest.fixture(scope="module")
 def bidi_request_generator():
-  def _generate_bidi_requests(number_of_names, number_of_res):
+  async def _generate_bidi_requests(number_of_names, number_of_res):
     for i in range(number_of_names):
       yield hello_world_pb2.MultipleHelloResRequest(name="{}".format(i), res=number_of_res)
   return _generate_bidi_requests

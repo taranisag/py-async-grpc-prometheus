@@ -36,10 +36,10 @@ Client metrics monitoring is done by intercepting the gPRC channel.
 
 ```python
 from grpc import aio
-from py_async_grpc_prometheus.prometheus_async_client_interceptor import PromAsyncClientInterceptor
+from py_async_grpc_prometheus.prometheus_async_client_interceptor import get_client_interceptors
 
 channel = aio.insecure_channel("server:6565",
-                                 interceptors=(PromAsyncClientInterceptor(),))
+                                 interceptors=get_client_interceptors())
 # Start an end point to expose metrics.
 start_http_server(metrics_port)
 ```

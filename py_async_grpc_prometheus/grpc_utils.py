@@ -1,4 +1,5 @@
 import grpc
+from typing import Iterable, AsyncIterable
 UNARY = "UNARY"
 SERVER_STREAMING = "SERVER_STREAMING"
 CLIENT_STREAMING = "CLIENT_STREAMING"
@@ -6,16 +7,29 @@ BIDI_STREAMING = "BIDI_STREAMING"
 UNKNOWN = "UNKNOWN"
 
 
-async def wrap_iterator_inc_counter(iterator, counter, grpc_type, grpc_service_name, grpc_method_name):
+async def wrap_iterator_inc_counter(iterator, counter, grpc_type, grpc_service_name, grpc_method_name, observer = None, legacy_observer = None, timer = None, start = None):
   """Wraps an iterator and collect metrics."""
-  
-  async for item in iterator:
-    counter.labels(
-      grpc_type=grpc_type,
-      grpc_service=grpc_service_name,
-      grpc_method=grpc_method_name).inc()
-    yield item
 
+  if isinstance(iterator, Iterable):
+    for item in iterator:
+      counter.labels(
+        grpc_type=grpc_type,
+        grpc_service=grpc_service_name,
+        grpc_method=grpc_method_name).inc()
+      yield item
+  elif isinstance(iterator, AsyncIterable):
+    async for item in iterator:
+      counter.labels(
+        grpc_type=grpc_type,
+        grpc_service=grpc_service_name,
+        grpc_method=grpc_method_name).inc()
+      yield item
+  if timer:
+    duration = max(timer() - start, 0)
+    if observer:
+      observer.observe(duration)
+    if legacy_observer:
+      legacy_observer.observe(duration)
 
 def get_method_type(request_streaming, response_streaming):
   """
